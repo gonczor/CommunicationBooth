@@ -11,7 +11,7 @@
 typedef struct message
 {
 	int id;
-	char *contents;
+	char contents[BUFSIZE];
 	unsigned int len;
 } message;
 

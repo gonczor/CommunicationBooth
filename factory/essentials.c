@@ -9,10 +9,9 @@
                  printf("Error number: %d\n", err);
                  exit(1);
          }
- 
  }
- 
- void get_shmid(int *shmid, const key_t key)
+
+ void create_shmid(int *shmid, const key_t key)
  {
          if((*shmid = shmget(key,BUFSIZE, PERM | IPC_CREAT)) == -1)
          {
@@ -21,7 +20,17 @@
                  printf("Error number: %d\n", err);
                  exit(1);
          }
- 
+ }
+
+ void get_shmid(int *shmid, const key_t key)
+ {
+         if((*shmid = shmget(key,BUFSIZE, PERM)) == -1)
+         {
+                 int err = errno;
+                 perror("shmget");
+                 printf("Error number: %d\n", err);
+                 exit(1);
+         }
  }
  
  void attach(message **msg, const int shmid)
