@@ -16,7 +16,6 @@ void create_message(message* msg)
 {
 	msg->id = id++;
 	strncpy(msg->contents, "Hello, world!", 1024);
-	// msg->contents = 'a';
 	msg->len =  strlen(msg->contents);
 	printf("Factory process with PID: %d created following message:\n", getpid());
 	printf("Message id: %d\n", msg->id);
@@ -25,14 +24,13 @@ void create_message(message* msg)
 
 int main(int argc, char *argv[])
 {
-        key_t key;
-        int shmid;
-        message *msg;
-        int pid;
+    	key_t key;
+    	int shmid;
+    	message *msg;
 
-        get_key(&key);
+    	get_key(&key);
 	create_shmid(&shmid, key);
-        attach(&msg, shmid);
+    	attach(&msg, shmid);
 	
 	create_message(msg);
         

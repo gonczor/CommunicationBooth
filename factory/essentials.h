@@ -12,11 +12,12 @@ typedef struct message
 {
 	int id;
 	char contents[BUFSIZE];
-	unsigned int len;
+	unsigned long len;
 } message;
 
 void get_key(key_t *key);
 void get_shmid(int *shmid, const key_t key);
+void create_shmid(int *shmid, const key_t key);
 void attach(message **msg, const int shmid);
 
 

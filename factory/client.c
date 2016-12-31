@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <signal.h>
+#include <sys/types.h>
 
 void signal_handler(int num)
 {
@@ -12,21 +13,10 @@ void signal_handler(int num)
 
 int main(void)
 {
-	int child_pid;
 	struct sigaction action;
 	action.sa_handler = signal_handler;
 	action.sa_flags = 0;
 	sigemptyset(&action.sa_flags);
-	
-	if((child_pid = fork()) == 0)
-	{
-		while(1)
-			sigaction(SIGUSR1, &action, NULL);
-	}
-	else
-	{	
-		printf("child pid: %d\n", child_pid);
-		printf("Waiting: %d\n", wait(0));
-	}
+	printf("client.exe pid: %d\n", getpid());	
 	return 0;
 }

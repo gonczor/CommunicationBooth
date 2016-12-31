@@ -10,7 +10,24 @@
 
 #include "essentials.h"
 
+unsigned int number_of_clients;
 
+typedef struct 
+{
+	int clients_server[number_of_clients];
+	message msg;
+	message_queue *next;
+} message_queue;
+
+void append_queue()
+{
+	
+}
+
+void read_clients_pids()
+{
+
+}
 
 int main(int argc, char *argv[])
 {
