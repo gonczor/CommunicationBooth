@@ -1,18 +1,18 @@
 #!/bin/bash
 
+echo "Starting dispatcher..."
+./dispatcher.exe&
+PID=$!
+echo "Dispatcher pid: $PID"
+
 echo "Starting factory..."
-./factory.exe > factory.log&
+./factory.exe "$PID"&
 
 > clients.txt
-for i in {1..1}
+for i in {1..2}
 do
-	./client.exe > client$!.log&
+	./client.exe > client$i.log&
 	PID=$!
 	echo "Started: $PID"
 	echo $PID >> clients.txt
 done
-
-echo "Starting dispatcher..."
-./dispatcher.exe > dispatcher.log&
-
-

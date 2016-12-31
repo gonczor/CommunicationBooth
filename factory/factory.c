@@ -22,6 +22,12 @@ void create_message(message* msg)
 	printf("Message contents: %s\n", msg->contents);
 }
 
+void inform_dispatcher(int dispatcher_id)
+{
+	printf("Informing: %d\n", dispatcher_id);
+	kill(dispatcher_id, SIGUSR1);
+}
+
 int main(int argc, char *argv[])
 {
     	key_t key;
@@ -33,9 +39,8 @@ int main(int argc, char *argv[])
     	attach(&msg, shmid);
 	
 	create_message(msg);
-        
+       	inform_dispatcher(atoi(argv[1])); 
 	shmdt(msg);
-	sleep(100);
         
 	exit(0);
 }

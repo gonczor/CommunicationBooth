@@ -10,6 +10,8 @@
 
 #include "essentials.h"
 
+int stop = 0;
+message *msg;
 unsigned int number_of_clients;
 
 typedef struct message_queue
@@ -39,21 +41,42 @@ void prepare_shm(message **msg,
 }
 
 
-void client_request_handler(int sig, siginfo_t *siginfo, void *context)
+void signal_request_handler(int sig, siginfo_t *siginfo, void *context)
 {
-
+	if(sig == SIGUSR1)
+	{
+		printf("sigusr1\n");
+		printf("Dispatcher process with PID: %d received following message:\n", getpid());
+		printf("Message id: %d\n", msg->id);
+		printf("Message contents: %s\n", msg->contents);
+	}
+	else if(sig == SIGINT)
+	{
+		printf("Dispatcher process with PID: %d received following message:\n", getpid());
+		printf("Message id: %d\n", msg->id);
+		printf("Message contents: %s\n", msg->contents);
+	}
+	else if(sig == SIGTERM)
+	{
+		printf("SIGTERM sent\n");
+		stop = 1;
+	}	
 }
 
 int main(int argc, char *argv[])
 {
-	message *msg;
         key_t key;
         int shmid;
+	static struct sigaction sa;
+
 	prepare_shm(&msg, &key, &shmid);
 
-	printf("Dispatcher process with PID: %d received following message:\n", getpid());
-	printf("Message id: %d\n", msg->id);
-	printf("Message contents: %s\n", msg->contents);
+     	sa.sa_sigaction = *signal_request_handler;
+	sa.sa_flags |= SA_SIGINFO;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGUSR1, &sa, NULL);
+	while(!stop)
+		;
 
         shmdt(msg);
 	shmctl(shmid, IPC_RMID, NULL);
