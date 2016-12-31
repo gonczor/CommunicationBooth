@@ -36,7 +36,6 @@ int main(int argc, char *argv[])
         
 	shmdt(msg);
 	sleep(100);
-	shmctl(shmid, IPC_RMID, NULL);
         
 	exit(0);
 }
