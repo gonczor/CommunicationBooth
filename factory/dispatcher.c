@@ -49,8 +49,9 @@ void signal_request_handler(int sig, siginfo_t *siginfo, void *context)
 		printf("Dispatcher process with PID: %d received following message:\n", getpid());
 		printf("Message id: %d\n", msg->id);
 		printf("Message contents: %s\n", msg->contents);
+		printf("This signal was called by process id: %d\n", siginfo->si_pid);
 	}
-	else if(sig == SIGINT)
+	else if(sig == SIGUSR2)
 	{
 		printf("Dispatcher process with PID: %d received following message:\n", getpid());
 		printf("Message id: %d\n", msg->id);

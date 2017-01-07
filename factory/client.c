@@ -11,6 +11,11 @@ void signal_handler(int num)
 	exit(num);
 }
 
+void request_data()
+{
+
+}
+
 int main(void)
 {
 	struct sigaction action;

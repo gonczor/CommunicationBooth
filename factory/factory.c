@@ -39,6 +39,9 @@ int main(int argc, char *argv[])
     	attach(&msg, shmid);
 	
 	create_message(msg);
+       	inform_dispatcher(atoi(argv[1]));
+	sleep(1);
+	create_message(msg);
        	inform_dispatcher(atoi(argv[1])); 
 	shmdt(msg);
         

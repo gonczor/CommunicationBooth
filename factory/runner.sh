@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm *.log
+
 echo "Starting dispatcher..."
 ./dispatcher.exe&
 PID=$!
