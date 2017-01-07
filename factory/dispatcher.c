@@ -84,12 +84,10 @@ void signal_request_handler(int sig, siginfo_t *siginfo, void *context)
 	{
 		if(number_of_clients == 0)
 		{
-			printf("SIGUSR2\n");
 			read_clients_pids();
 		}
 		else
 		{
-			printf("SIGUSR2 number of clients: %d\n", number_of_clients);
 			printf("Dispatcher process with PID: %d received following message:\n", getpid());
 			printf("Message id: %d\n", msg->id);
 			printf("Message contents: %s\n", msg->contents);
@@ -106,19 +104,25 @@ int main(int argc, char *argv[])
 {
         key_t key;
         int shmid;
-	static struct sigaction sa;
+	static struct sigaction factory_action;
 	static struct sigaction client_action;
+	static struct sigaction terminate_action;
 	prepare_shm(&msg, &key, &shmid);
 
-     	sa.sa_sigaction = *signal_request_handler;
-	sa.sa_flags |= SA_SIGINFO;
-	sigemptyset(&sa.sa_mask);
-	sigaction(SIGUSR1, &sa, NULL);
+     	factory_action.sa_sigaction = *signal_request_handler;
+	factory_action.sa_flags |= SA_SIGINFO;
+	sigemptyset(&factory_action.sa_mask);
+	sigaction(SIGUSR1, &factory_action, NULL);
 
 	client_action.sa_sigaction = *signal_request_handler;
 	client_action.sa_flags |= SA_SIGINFO;
 	sigemptyset(&client_action.sa_mask);
 	sigaction(SIGUSR2, &client_action, NULL);
+	
+	terminate_action.sa_sigaction = *signal_request_handler;
+	terminate_action.sa_flags |= SA_SIGINFO;
+	sigemptyset(&terminate_action.sa_mask);
+	sigaction(SIGTERM, &terminate_action, NULL);
 
 	while(!stop)
 		;
