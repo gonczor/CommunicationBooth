@@ -11,9 +11,9 @@ echo "Starting factory..."
 ./factory.exe "$PID"&
 
 > clients.txt
-for i in {1..2}
+for i in {1..1}
 do
-	./client.exe > client$i.log&
+	./client.exe $PID > client$i.log&
 	PID=$!
 	echo "Started: $PID"
 	echo $PID >> clients.txt
