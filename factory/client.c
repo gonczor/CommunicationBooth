@@ -5,26 +5,15 @@
 #include <signal.h>
 #include <sys/types.h>
 
-void signal_handler(int num)
-{
-	printf("Handler called.\n");
-	exit(num);
-}
+#include "booth.h"
 
-void request_data()
-{
-
-}
-
-int main(int argc, char* argv[])
-{
-	struct sigaction action;
-	action.sa_handler = signal_handler;
-	action.sa_flags = 0;
-	sigemptyset(&action.sa_flags);
+int main(int argc, char* argv[]){
+	char *cs;
 	printf("client.exe pid: %d\n", getpid());
-
-	kill(SIGUSR2, atoi(argv[1]));
+	cs = get_client_com_file_name(getpid());
+	printf("Client com file: %s\n", cs);
+	printf("OK\n");
+	message_request(atoi(argv[1]));
 
 	return 0;
 }
