@@ -8,9 +8,13 @@
 #include "booth.h"
 
 int main(int argc, char* argv[]){
-	char *cs;
+	if(argc != 3){
+		printf("Usage: ./client.exe <message_type> <dispatcher_pid>\n" );
+		exit(1);
+	}
+
 	printf("client.exe pid: %d\n", getpid());
-	cs = get_client_com_file_name(getpid());
+	const char *cs = get_client_com_file_name(getpid());
 	printf("Client com file: %s\n", cs);
 	printf("OK\n");
 	message_request(atoi(argv[1]));

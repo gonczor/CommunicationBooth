@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <sys/ipc.h>
 #include <sys/types.h>
 #include <sys/shm.h>
@@ -10,6 +11,8 @@
 
 #include "booth.h"
 
+#define MAX_CLIENTS 100
+
 typedef struct message_queue{
 	pid_t *clients_served;
 	message msg;
@@ -17,18 +20,17 @@ typedef struct message_queue{
 } message_queue;
 
 int stop = 0;
-message *msg;
-message_queue *msg_queue_head = NULL;
-message_queue *msg_queue_tail = NULL;
+static message *msg = NULL;
+message_queue message_vector[MAX_CLIENTS];
 unsigned int number_of_clients = 0;
-pid_t *clients_list;
+static pid_t *clients_list = NULL;
 
 message_queue* new_queue_element(){
 	int i;
-	message_queue *new_element = malloc(sizeof(message_queue));
+	message_queue *new_element = (message_queue*) malloc(sizeof(message_queue));
 
-	new_element->clients_served = malloc(number_of_clients*sizeof(number_of_clients));
-	new_element->msg = *msg;
+	memcpy(&new_element->msg, msg, sizeof(message_queue));
+	new_element->clients_served = (int*) malloc(number_of_clients*sizeof(number_of_clients));
 	new_element->next = NULL;
 	for(i = 0; i < number_of_clients; i++){
 		new_element->clients_served[i] = 0;
@@ -38,22 +40,33 @@ message_queue* new_queue_element(){
 }
 
 void append_queue(){
+	int index;
 	printf("Appending with message with id: %d\n", msg->id);
 	message_queue *new_element = new_queue_element();
-	if(msg_queue_head){
-		msg_queue_tail->next = new_element;
-		msg_queue_tail = new_element;
+	index = new_element->msg.type;
+
+	if(&message_vector[index] == NULL){
+		message_vector[index] = *new_element;
 	}
-	else{
-		msg_queue_head = msg_queue_tail = new_element;
+	else {
+		message_queue *mq = &message_vector[index];
+		while(mq->next != NULL){
+			mq = mq->next;
+		}
+		mq->next = new_element;
 	}
 }
 
 void show_queue(){
-	message_queue *element = msg_queue_head;
-	while(element != NULL){
-		printf("Element has message id: %d\n", element->msg.id);
-		element = element->next;
+	int i = 0;
+	message_queue *mq;
+	for(i = 0; i < MAX_CLIENTS; i++){
+		printf("message type: %d\n", i);
+		mq = &message_vector[i];
+		while(mq != NULL){
+			printf("ID: %d, contents: %s\n", mq->msg.id, mq->msg.contents);
+			mq = mq->next;
+		}
 	}
 }
 
@@ -74,16 +87,16 @@ void read_clients_pids(){
 	}
 
 	fclose(fp);
-	clients_list = (int*) malloc(number_of_clients * sizeof(unsigned int));
+	clients_list = (int*)malloc(number_of_clients * sizeof(unsigned int));
 
 	fp = fopen("clients.txt", "r");
 	if (fp == NULL)
 		exit(1);
 
 	// fill clients_list with clients PIDs
+	i = 0;
 	while ((read = getline(&line, &len, fp)) != -1) {
-		clients_list[i] = (pid_t) atoi(line);
-		i++;
+		clients_list[i++] = (pid_t) atoi(line);
 	}
 
 	fclose(fp);
@@ -96,7 +109,7 @@ void read_clients_pids(){
 }
 
 void prepare_factory_shm(message **msg, key_t *key, int *shmid){
-	get_factory_key(key);
+		get_factory_key(key);
     get_shmid(shmid, *key);
     attach(msg, *shmid);
 }
@@ -118,7 +131,7 @@ void signal_request_handler(int sig, siginfo_t *siginfo, void *context){
 		append_queue();
 	}
 	else if(sig == SIGUSR2){
-		printf("SUGUSR2 received by process: %d\n", getpid());
+		printf("SIGUSR2 received by process: %d\n", getpid());
 		if(number_of_clients == 0){
 			read_clients_pids();
 		}
@@ -153,9 +166,25 @@ void prepare_sigaction(){
 	sigaction(SIGTERM, &terminate_action, NULL);
 }
 
+void free_message_vector(){
+	int i;
+	message_queue *mq, *mq_next;;
+	for(i = 0; i < MAX_CLIENTS; i++){
+		printf("Freeing: %d\n", i);
+		mq = message_vector[i].next;
+		while(mq != NULL){
+			printf("Freeing id: %d at position: %p\n", mq->msg.id, mq);
+			mq_next = mq->next;
+			free(mq->clients_served);
+			free(mq);
+			mq = mq_next;
+		}
+	}
+}
+
 int main(int argc, char *argv[]){
-    key_t key;
-    int shmid;
+  key_t key;
+	int shmid;
 
 	read_clients_pids();
 	prepare_factory_shm(&msg, &key, &shmid);
@@ -167,7 +196,9 @@ int main(int argc, char *argv[]){
 
 	// clean up
 	show_queue();
-    shmdt(msg);
+	free_message_vector();
+
+  shmdt(msg);
 	shmctl(shmid, IPC_RMID, NULL);
-    exit(0);
+  exit(0);
 }

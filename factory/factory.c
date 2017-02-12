@@ -10,9 +10,10 @@
 
 #include "booth.h"
 
-int id = 5;
+int id = 0;
 
 void create_message(message* msg){
+	msg->type = 1;
 	msg->id = id++;
 	strncpy(msg->contents, "Hello, world!", 1024);
 	msg->len =  strlen(msg->contents);
@@ -26,7 +27,7 @@ int main(int argc, char *argv[])
 	key_t key;
 	int shmid;
 	message *msg;
-
+	printf("Factory\n");
 	get_factory_key(&key);
 	create_shmid(&shmid, key);
 	attach(&msg, shmid);

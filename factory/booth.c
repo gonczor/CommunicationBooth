@@ -1,12 +1,12 @@
 #include "booth.h"
 
+static char pid_char[128];
 char * get_client_com_file_name(pid_t pid){
-    int pid_len = floor (log10 (abs (pid))) + 1;
-    char pid_char[pid_len + 4];
-    sprintf(pid_char,"%d", pid);
-    printf("pid_char: %s\n", pid_char);
-    strcat(pid_char, "_com");
-    return pid_char;
+  memset(pid_char, 0, 128);
+  sprintf(pid_char,"%d", pid);
+  printf("pid_char: %s\n", pid_char);
+  strcat(pid_char, "_com");
+  return pid_char;
 }
 
 void inform_dispatcher(int dispatcher_id){
