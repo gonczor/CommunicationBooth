@@ -18,7 +18,7 @@ static void get_key(key_t *key, char* file_name){
     if((*key = ftok(file_name, 'R')) == -1){
         int err = errno;
         perror("ftok");
-        printf("Error number: %d\n", err);
+        printf("Error number: %d\a\n", err);
         exit(1);
     }
 }
@@ -28,19 +28,18 @@ void get_factory_key(key_t *key){
 }
 
 void get_client_key(key_t *key, pid_t client_pid){
-    char buf[10];
-
-    sprintf(buf, "%d", client_pid);
-    get_key(key, buf);
+  char buf[128];
+  sprintf(buf, "%s", get_client_com_file_name(client_pid));
+  get_key(key, buf);
 }
 
 void create_shmid(int *shmid, const key_t key){
-    if((*shmid = shmget(key,BUFSIZE, PERM | IPC_CREAT)) == -1){
-        int err = errno;
-        perror("shmget");
-        printf("Error number: %d\n", err);
-        exit(1);
-    }
+  if((*shmid = shmget(key,BUFSIZE, PERM | IPC_CREAT)) == -1){
+    int err = errno;
+    perror("shmget");
+    printf("Error number: %d\n", err);
+    exit(1);
+  }
 }
 
 void get_shmid(int *shmid, const key_t key){
@@ -62,6 +61,7 @@ void attach(message **msg, const int shmid){
 
 message message_request(pid_t pid){
     kill(SIGUSR2, pid);
+    printf("Sent SIGUSR2 to: %d\n", pid);
     message m;
     return m;
 }

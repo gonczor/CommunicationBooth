@@ -11,7 +11,7 @@
 
 #include "booth.h"
 
-#define MAX_CLIENTS 100
+#define MAX_CLIENTS 10
 
 typedef struct message_queue{
 	pid_t *clients_served;
@@ -19,11 +19,20 @@ typedef struct message_queue{
 	struct message_queue *next;
 } message_queue;
 
+typedef struct client_shm_data{
+	key_t key;
+	pid_t pid;
+	int shmid;
+	message *msg;
+} client_shm_data;
+
 int stop = 0;
+int factory_ready = 0;
 static message *msg = NULL;
 message_queue message_vector[MAX_CLIENTS];
 unsigned int number_of_clients = 0;
 static pid_t *clients_list = NULL;
+client_shm_data *clients;
 
 message_queue* new_queue_element(){
 	int i;
@@ -109,9 +118,32 @@ void read_clients_pids(){
 }
 
 void prepare_factory_shm(message **msg, key_t *key, int *shmid){
-		get_factory_key(key);
-    get_shmid(shmid, *key);
-    attach(msg, *shmid);
+	printf("Preparing shm for factory.\n");
+	if(creat("factory_com", O_CREAT | 0666) == -1){
+		perror("Factory error: ");
+	};
+	get_factory_key(key);
+	create_shmid(shmid, *key);
+	attach(msg, *shmid);
+	printf("FActory shm ready\n");
+}
+
+void prepare_client_shm(){
+	int i;
+	clients = (client_shm_data*)malloc(sizeof(client_shm_data)*number_of_clients);
+	for(i = 0; i < number_of_clients; i++){
+		clients[i].pid = clients_list[i];
+		printf("Preparing shm for client: %d.\n", clients[i].pid);
+		if(creat(get_client_com_file_name(clients[i].pid), O_CREAT | 0666) == -1){
+			perror("Dispatcher prepare_client_shm\n");
+			printf("Client: %d creat.", getpid());
+			exit(1);
+		};
+		get_client_key(&clients[i].key, clients[i].pid);
+		create_shmid(&clients[i].shmid, clients[i].key);
+		attach(&clients[i].msg, clients[i].shmid);
+		printf("Shm ready for client: %d.\n", clients[i].pid);
+	}
 }
 
 void give_message_to_client(pid_t client){
@@ -120,7 +152,7 @@ void give_message_to_client(pid_t client){
 
 void signal_request_handler(int sig, siginfo_t *siginfo, void *context){
 	/*
-	SIGUSR1 is used for handling communication with factory
+	SIGUSR1 is used for handling communication with factory.
 	SIGUSR2 is used for handling communication with clients.
 		if number_of_clients equals to 0, we read new clients list.
 		otherwise we give newest message still not read by client. If all messages have been read NULL is set
@@ -131,9 +163,10 @@ void signal_request_handler(int sig, siginfo_t *siginfo, void *context){
 		append_queue();
 	}
 	else if(sig == SIGUSR2){
-		printf("SIGUSR2 received by process: %d\n", getpid());
+		printf("SIGUSR2 received by process: %d sent by: %d\n", getpid(), siginfo->si_pid);
 		if(number_of_clients == 0){
 			read_clients_pids();
+			prepare_client_shm();
 		}
 		else{
 			give_message_to_client(siginfo->si_pid);
@@ -185,8 +218,8 @@ void free_message_vector(){
 int main(int argc, char *argv[]){
   key_t key;
 	int shmid;
+	int i;
 
-	read_clients_pids();
 	prepare_factory_shm(&msg, &key, &shmid);
 	prepare_sigaction();
 
@@ -194,11 +227,15 @@ int main(int argc, char *argv[]){
 	while(!stop)
 		;
 
-	// clean up
 	show_queue();
+	// clean up
 	free_message_vector();
 
   shmdt(msg);
 	shmctl(shmid, IPC_RMID, NULL);
+	for(i = 0; i < number_of_clients; i++){
+		shmdt(clients[i].msg);
+		shmctl(clients[i].shmid, IPC_RMID, NULL);
+	}
   exit(0);
 }

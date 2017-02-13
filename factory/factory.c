@@ -27,9 +27,10 @@ int main(int argc, char *argv[])
 	key_t key;
 	int shmid;
 	message *msg;
+
 	printf("Factory\n");
 	get_factory_key(&key);
-	create_shmid(&shmid, key);
+	get_shmid(&shmid, key);
 	attach(&msg, shmid);
 
 	create_message(msg);

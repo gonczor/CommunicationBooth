@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <signal.h>
-#include<string.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
